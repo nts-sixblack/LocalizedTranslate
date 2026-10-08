@@ -74,6 +74,24 @@ public struct QuickCommandPalette: View {
                 }
             ),
             CommandPaletteItem(
+                title: "Delete Stale Items (All Languages)",
+                subtitle: "Delete stale string catalog rows because they are no longer used",
+                icon: "clock.badge.xmark",
+                shortcut: nil,
+                action: {
+                    viewModel.clearStaleTranslations(allLanguages: true)
+                }
+            ),
+            CommandPaletteItem(
+                title: "Delete Stale Items (\(viewModel.selectedLanguage.uppercased()) only)",
+                subtitle: "Delete rows marked stale in the currently selected target language",
+                icon: "clock.arrow.circlepath",
+                shortcut: nil,
+                action: {
+                    viewModel.clearStaleTranslations(allLanguages: false)
+                }
+            ),
+            CommandPaletteItem(
                 title: "Save Catalog & Backup",
                 subtitle: "Writes changes to .xcstrings with automatic backup snapshot",
                 icon: "square.and.arrow.down",

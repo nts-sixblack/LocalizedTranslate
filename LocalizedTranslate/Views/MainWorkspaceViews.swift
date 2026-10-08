@@ -165,6 +165,15 @@ public struct WorkspaceSidebarView: View {
                                         .font(.system(size: 12, weight: isSelected ? .bold : .regular))
                                         .foregroundStyle(isSelected ? RaycastTheme.ink : RaycastTheme.body)
                                     Spacer()
+                                    let staleCount = viewModel.staleTranslationsCount(allLanguages: false)
+                                    if isSelected && staleCount > 0 {
+                                        Text("\(staleCount) stale")
+                                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                            .foregroundStyle(RaycastTheme.accentYellow)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 1)
+                                            .background(Capsule().fill(RaycastTheme.accentYellow.opacity(0.12)))
+                                    }
                                     Text(stats.percentageString)
                                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                                         .foregroundStyle(stats.completionRate >= 1.0 ? RaycastTheme.accentGreen : (isSelected ? RaycastTheme.accentBlue : RaycastTheme.mute))
@@ -217,6 +226,26 @@ public struct WorkspaceSidebarView: View {
                     if !viewModel.selectedLanguage.isEmpty {
                         Divider().background(RaycastTheme.hairline)
                         TranslationSegmentedChartView(stats: viewModel.progressStats(for: viewModel.selectedLanguage))
+                    }
+
+                    let staleCount = viewModel.staleTranslationsCount(allLanguages: true)
+                    if staleCount > 0 {
+                        Divider().background(RaycastTheme.hairline)
+                        Button {
+                            viewModel.clearStaleTranslations(allLanguages: true)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "clock.badge.xmark")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(RaycastTheme.accentYellow)
+                                Text("Delete \(staleCount) stale items")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(RaycastTheme.ink)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .help("Delete stale string catalog rows because they are no longer used")
                     }
 
                     if let saveMsg = viewModel.saveStatusMessage {

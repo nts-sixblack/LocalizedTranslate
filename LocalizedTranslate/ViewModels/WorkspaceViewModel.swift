@@ -290,6 +290,81 @@ extension WorkspaceViewModel {
         targetLanguages.sort()
         selectedLanguage = trimmed
     }
+
+    public func staleTranslationsCount(allLanguages: Bool = true) -> Int {
+        staleKeys(allLanguages: allLanguages).count
+    }
+
+    @discardableResult
+    public func clearStaleTranslations(allLanguages: Bool = true) -> Int {
+        guard let cat = catalog else { return 0 }
+        guard allLanguages || !selectedLanguage.isEmpty else {
+            errorMessage = "Please select a target language first."
+            return 0
+        }
+
+        let keysToDelete = staleKeys(allLanguages: allLanguages)
+        guard !keysToDelete.isEmpty else {
+            errorMessage = allLanguages ? "No stale items found." : "No stale items found for [\(selectedLanguage.uppercased())]."
+            return 0
+        }
+
+        for key in keysToDelete {
+            cat.strings.removeValue(forKey: key)
+        }
+
+        errorMessage = nil
+        if let selectedKey, keysToDelete.contains(selectedKey) {
+            self.selectedKey = cat.strings.keys.sorted().first
+        }
+        catalogVersion += 1
+        refreshQA()
+        saveCatalog()
+        saveStatusMessage = allLanguages ? "Deleted \(keysToDelete.count) stale items" : "Deleted \(keysToDelete.count) stale items for \(selectedLanguage.uppercased())"
+        return keysToDelete.count
+    }
+
+    private func staleKeys(allLanguages: Bool) -> Set<String> {
+        guard let cat = catalog else { return [] }
+        guard allLanguages || !selectedLanguage.isEmpty else { return [] }
+
+        var keys = Set<String>()
+        for (key, group) in cat.strings {
+            if group.extractionState?.lowercased() == "stale" {
+                keys.insert(key)
+                continue
+            }
+
+            guard let localizations = group.localizations else { continue }
+            if allLanguages {
+                if localizations.values.contains(where: Self.localizationContainsStaleState) {
+                    keys.insert(key)
+                }
+            } else if let unit = localizations[selectedLanguage], Self.localizationContainsStaleState(unit) {
+                keys.insert(key)
+            }
+        }
+        return keys
+    }
+
+    private static func localizationContainsStaleState(_ unit: LocalizationUnit) -> Bool {
+        if unit.stringUnit?.state.lowercased() == "stale" { return true }
+        if variationsContainStaleState(unit.variations) { return true }
+        return unit.substitutions?.values.contains { variationsContainStaleState($0.variations) } == true
+    }
+
+    private static func variationsContainStaleState(_ variations: VariationsUnit?) -> Bool {
+        guard let variations else { return false }
+        if let plural = variations.plural {
+            let units = [plural.zero, plural.one, plural.two, plural.few, plural.many, plural.other]
+            if units.contains(where: { $0?.stringUnit.state.lowercased() == "stale" }) { return true }
+        }
+        if let device = variations.device {
+            let units = [device.appletv, device.applevision, device.applewatch, device.ipad, device.iphone, device.ipod, device.mac, device.other]
+            if units.contains(where: { $0?.stringUnit.state.lowercased() == "stale" }) { return true }
+        }
+        return false
+    }
 }
 
 // MARK: - QA Inspection & Display Items
