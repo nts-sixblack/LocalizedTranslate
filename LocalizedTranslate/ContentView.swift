@@ -184,50 +184,49 @@ public struct ContentView: View {
                     .help("Translate missing strings for selected language (\(viewModel.selectedLanguage.uppercased()))")
 
                     let staleCount = viewModel.staleTranslationsCount(allLanguages: true)
-                    if staleCount > 0 {
-                        Menu {
-                            Button(role: .destructive) {
-                                viewModel.clearStaleTranslations(allLanguages: true)
-                            } label: {
-                                Label("Delete ALL stale items (\(staleCount))", systemImage: "trash")
-                            }
-
-                            Button(role: .destructive) {
-                                viewModel.clearStaleTranslations(allLanguages: false)
-                            } label: {
-                                Label("Delete stale items in \(viewModel.selectedLanguage.uppercased())", systemImage: "trash.circle")
-                            }
-                            .disabled(viewModel.selectedLanguage.isEmpty)
+                    Menu {
+                        Button(role: .destructive) {
+                            viewModel.clearStaleTranslations(allLanguages: true)
                         } label: {
-                            HStack(spacing: 5) {
-                                Image(systemName: "clock.badge.xmark")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(RaycastTheme.accentYellow)
-                                Text("Delete Stale")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(RaycastTheme.ink)
-                                Text("\(staleCount)")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(RaycastTheme.onPrimaryBlack)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 1)
-                                    .background(Capsule().fill(RaycastTheme.accentYellow))
-                                Image(systemName: "chevron.down")
-                                    .font(.system(size: 8))
-                                    .foregroundStyle(RaycastTheme.mute)
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(RaycastTheme.surfaceElevated)
-                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(RaycastTheme.accentYellow.opacity(0.4), lineWidth: 1))
-                            )
+                            Label("Delete ALL stale items (\(staleCount))", systemImage: "trash")
                         }
-                        .menuStyle(.borderlessButton)
-                        .disabled(viewModel.catalog == nil || viewModel.translationManager.isTranslating)
-                        .help("Delete stale string catalog rows because they are no longer used")
+                        .disabled(staleCount == 0)
+
+                        Button(role: .destructive) {
+                            viewModel.clearStaleTranslations(allLanguages: false)
+                        } label: {
+                            Label("Delete stale items in \(viewModel.selectedLanguage.uppercased())", systemImage: "trash.circle")
+                        }
+                        .disabled(viewModel.selectedLanguage.isEmpty || viewModel.staleTranslationsCount(allLanguages: false) == 0)
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "clock.badge.xmark")
+                                .font(.system(size: 11))
+                                .foregroundStyle(staleCount > 0 ? RaycastTheme.accentYellow : RaycastTheme.mute)
+                            Text("Delete Stale")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(RaycastTheme.ink)
+                            Text("\(staleCount)")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(staleCount > 0 ? RaycastTheme.onPrimaryBlack : RaycastTheme.mute)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(staleCount > 0 ? RaycastTheme.accentYellow : RaycastTheme.surfaceCard))
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 8))
+                                .foregroundStyle(RaycastTheme.mute)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(RaycastTheme.surfaceElevated)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(staleCount > 0 ? RaycastTheme.accentYellow.opacity(0.4) : RaycastTheme.hairline, lineWidth: 1))
+                        )
                     }
+                    .menuStyle(.borderlessButton)
+                    .disabled(viewModel.catalog == nil || viewModel.translationManager.isTranslating)
+                    .help("Delete stale string catalog rows because they are no longer used")
 
                     // Re-translate QA Issues Menu (Supports All Languages or Single Language)
                     Menu {
